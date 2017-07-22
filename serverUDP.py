@@ -17,7 +17,9 @@ class UDPServer(object):
                 self.sock.sendto(bytes('[%s]' % (data.decode('utf-8')), 'utf-8'), addr)
                 print('...received from and returned to: {0}'.format(addr))
         except KeyboardInterrupt:
-            print('Socket is shutting down..')
+            print('Service is shutting down...')
+            self.sock.close()
+        finally:
             self.sock.close()
 
 if __name__=='__main__':
