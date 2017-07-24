@@ -35,8 +35,9 @@ class ChatServer(object):
                         # Client sent something
                         print('client sent something')
                         try:
+                            print('Here in server', sock)
                             data = sock.recv(self.BUFSIZ)
-                            print(data)
+                            print('Data:', data)
                             if data:
                                 # data is a tuple of the form: (nickname, message_from_client)
                                 nickname, msg = pickle.loads(data)

@@ -30,9 +30,8 @@ class ChatClient(object):
                  for sock in rlist:
                     if sock==sys.stdin:
                         # Client would like to send something
-                        data = (self.nickname, sys.stdin.read())
-                        print(data)
-                        msg = pickle.loads(data)
+                        data = (self.nickname, sys.stdin.readline())
+                        msg = pickle.dumps(data)
                         self.sock.send(msg)
                         sys.stdout.write('[Me] '); sys.stdout.flush()
                     else:
