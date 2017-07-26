@@ -2,6 +2,7 @@ from socket import *
 import sys
 import pickle
 import select
+import os
 
 
 class ChatClient(object):
@@ -17,8 +18,8 @@ class ChatClient(object):
         except:
             print('Unable to connect to {0}'.format(self.addr))
             sys.exit()
-        print('Client connected to the chat server at {0}. Please send messages'.format(self.addr), flush=True)
-        sys.stdout.write('[Me] '); sys.stdout.flush()
+        print('Connected to remote host at {0}. Start sending messages'.format(self.addr), flush=True)
+        print('<Me> ', flush = True, end = '')
         self.sockets = [sys.stdin, self.sock]
         self.nickname = nickname
 
@@ -33,16 +34,16 @@ class ChatClient(object):
                         data = (self.nickname, sys.stdin.readline())
                         msg = pickle.dumps(data)
                         self.sock.send(msg)
-                        sys.stdout.write('[Me] '); sys.stdout.flush()
+                        print('<Me> ', flush = True, end = '')
                     else:
                         # Message from server was received
                         data = sock.recv(self.bufsize)
                         if not data:
-                            print('Disconnected...')
+                            print('Disconnected from the server...', file = sys.stderr)
                             sys.exit()
                         else:
-                            sys.stdout.write(data.decode('utf-8'))
-                            sys.stdout.write('[Me] '); sys.stdout.flush()
+                            print(data.decode('utf-8'), end = '')
+                            print('<Me> ', flush = True, end = '')
         except KeyboardInterrupt:
             self.sock.close()
 

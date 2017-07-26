@@ -27,29 +27,28 @@ class ChatServer(object):
                     if sock == self.sock:
                         # New connection arrived
                         client_sock, addr = self.sock.accept()
+                        #client_sock.setblocking(False)
                         self.sockets.append(client_sock)
                         print("Client {0} connected".format(addr))
-                        msg = 'User at {0} entered our chatting room'.format(addr)
+                        msg = 'Client {0} entered our chatting room\n'.format(addr)
                         self.broadcast(client_sock, msg)
                     else:
                         # Client sent something
-                        print('client sent something')
                         try:
-                            print('Here in server', sock)
-                            data = sock.recv(self.BUFSIZ)
-                            print('Data:', data)
+                            data = sock.recv(self.bufsize)
                             if data:
                                 # data is a tuple of the form: (nickname, message_from_client)
                                 nickname, msg = pickle.loads(data)
-                                msg_to_broadcast = "[{0}] {1}".format(nickname, msg)
+                                msg_to_broadcast = "\r<{0}> {1}".format(nickname, msg)
                                 self.broadcast(sock, msg_to_broadcast)
                             else:
                                 self.sockets.remove(sock)
-                                msg = 'Client is offline'
+                                msg = 'Client {0} is offline\n'.format(sock.getpeername())
                                 self.broadcast(sock, msg)
-                        except:
+                        except Exception as error:
                             self.sockets.remove(sock)
-                            msg = 'Client is offline'
+                            print(str(type(error).__name__ + ' : ' + ' '.join(error.args)), file = sys.stderr, flush = True)
+                            msg = 'Smth terrible happened. Client {0} is offline'.format(sock.getpeername())
                             self.broadcast(sock, msg)
                             continue
         except KeyboardInterrupt:
@@ -60,9 +59,10 @@ class ChatServer(object):
         for sock in self.sockets:
             if sock != self.sock and sock!=new_socket:
                 try:
+                    # '\r' is needed to owerwrite the last line (for example in progress bars)
                     sock.send(bytes(msg, 'utf-8'))
                 except:
-                    print('Broken socket')
+                    print('Broken socket - ' + str(type(error).__name__ + ' : ' + ' '.join(error.args)), file = sys.stderr, flush = True)
                     sock.close()
                     if sock in self.sockets:
                         self.sockets.remove(new_socket)
