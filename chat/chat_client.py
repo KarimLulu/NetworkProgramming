@@ -19,6 +19,7 @@ class ChatClient(object):
             print('Unable to connect to {0}'.format(self.addr))
             sys.exit()
         print('Connected to remote host at {0}. Start sending messages'.format(self.addr), flush=True)
+        #print(self.sock.getpeername(), self.sock.getsockname())
         print('<Me> ', flush = True, end = '')
         self.sockets = [sys.stdin, self.sock]
         self.nickname = nickname
