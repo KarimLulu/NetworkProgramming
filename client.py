@@ -4,13 +4,13 @@ import ssl
 
 class TCPClient(object):
 
-    def __init__(self, HOST = 'localhost', PORT = 2097, BUFSIZ = 1024):
+    def __init__(self, HOST = 'localhost', PORT = 80, BUFSIZ = 1024):
         self.addr = (HOST, PORT)
         self.bufsize = BUFSIZ
         self.sock= socket(AF_INET, SOCK_STREAM)
 
     @classmethod
-    def with_ssl(cls, HOST = 'localhost', PORT = 2097, BUFSIZ = 1024):
+    def with_ssl(cls, HOST = 'localhost', PORT = 443, BUFSIZ = 1024):
         client = cls(HOST=HOST, PORT=PORT, BUFSIZ=BUFSIZ)
         client.sock = ssl.wrap_socket(client.sock)
         return client
