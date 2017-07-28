@@ -1,27 +1,100 @@
 from socket import *
 import sys
 import ssl
+from urllib.parse import urlparse
+import re
+import chardet
 
-class TCPClient(object):
 
-    def __init__(self, HOST = 'localhost', PORT = 80, BUFSIZ = 1024):
+protocol_port_mapping = {
+                                'http': 80,
+                                'https': 443
+                            }
+DEFAULT_PORT = 80
+DEFAULT_SCHEME = 'http'
+BUFSIZ = 4096
+GET_PATTERN = 'GET {page} HTTP/1.1\nConnection: close\nHost: {host}\n\n'
+HEADER_SEPARATOR = b'\r\n\r\n'
+REGEXP_ENCODING = r'charset=([\w.-]+)(?:;|\r\n|$)'
+DEFAULT_ENCODING = 'utf-8'
+
+
+class Response(object):
+    def __init__(self, response_headers, raw_content, encoding):
+        self.response_headers = response_headers
+        self.raw = raw_content
+        self.encoding = encoding
+
+
+    @property
+    def text(self):
+        encoding = self.encoding
+        if not encoding:
+            encoding = self.guessed_encoding
+        return self.raw.decode(encoding)
+
+
+    @property
+    def guessed_encoding(self):
+        return chardet.detect(self.raw)['encoding']
+
+
+class HTTPClient(object):
+
+    def __init__(self, HOST = 'localhost', PORT = 80, BUFSIZ=BUFSIZ):
         self.addr = (HOST, PORT)
         self.bufsize = BUFSIZ
         self.sock= socket(AF_INET, SOCK_STREAM)
 
+
     @classmethod
-    def with_ssl(cls, HOST = 'localhost', PORT = 443, BUFSIZ = 1024):
+    def with_ssl(cls, HOST = 'localhost', PORT = 443, BUFSIZ=BUFSIZ):
         client = cls(HOST=HOST, PORT=PORT, BUFSIZ=BUFSIZ)
         client.sock = ssl.wrap_socket(client.sock)
         return client
+
 
     def conn(self):
         self.sock.connect(self.addr)
         print('Connected to {0}'.format(self.addr))
 
+
     def send(self, data):
         self.sock.sendall(bytes(data, 'utf-8'))
         print('Data is sent. Waiting for the reponse...\n')
+
+
+    @classmethod
+    def get(cls, url):
+        if '//' not in url:
+            url = '{scheme}//{url}'.format(scheme=DEFAULT_SCHEME, url=url)
+        url_parts = urlparse(url)
+        PORT = protocol_port_mapping.get(url_parts.scheme, DEFAULT_PORT)
+        HOST = url_parts.hostname
+        if PORT == 443:
+            client = cls.with_ssl(HOST=HOST, PORT=PORT)
+        else:
+            client = cls(HOST=HOST, PORT=PORT)
+        client.conn()
+        GET_REQUEST = GET_PATTERN.format(page=url_parts.path, host=HOST)
+        client.send(GET_REQUEST)
+        raw_response = client.recv()
+        response = client._build_response(raw_response)
+        return response
+
+
+    def _build_response(self, raw_response):
+        headers_end_idx = raw_response.find(HEADER_SEPARATOR)                # The end of the header
+        content_start_idx = headers_end_idx+len(HEADER_SEPARATOR)
+        content = raw_response[content_start_idx:]
+        response_headers = raw_response[:headers_end_idx].decode('iso-8859-1')  #Parses only RFC2822 headers, then use email.parser
+        rez = re.findall(REGEXP_ENCODING, response_headers, re.MULTILINE)
+        if rez:
+            encoding = rez[0].lower()
+        else:
+            encoding = None
+        return Response(response_headers, content, encoding)
+
 
     def recv(self):
         data = []
@@ -33,20 +106,8 @@ class TCPClient(object):
 
 
 if __name__ == '__main__':
-    HOST = 'en.wikipedia.org'
-    PORT = 443
-    page = '/wiki/Battle_of_Dunkirk'
-    client = TCPClient.with_ssl(HOST, PORT, 4096)
-    client.conn()
-    cmd = 'GET {page} HTTP/1.1\nConnection: close\nHost: {host}\n\n'.format(host=HOST, page=page) #or use HTTP/1.0
-    client.send(cmd)
-    response = client.recv()
-    header_separator = b'\r\n\r\n'
-    posh = response.find(header_separator) # The end of the header
-    #print(response[:posh].decode()) # Try to determine encoding
-    charset = 'utf-8'
-    with open(HOST+'.html', 'w') as f:
-        f.write(response[posh+len(header_separator):].decode(charset))
-
-    print(len(response), len(response.decode(charset)))
-    print(min(response), max(response))
+    url = 'https://en.wikipedia.org/wiki/Battle_of_Dunkirk'
+    r = HTTPClient.get(url)
+    with open('Dunkirk'+'.html', 'w') as f:
+        f.write(r.text)
+    print(r.response_headers)
