@@ -13,7 +13,7 @@ protocol_port_mapping = {
 DEFAULT_PORT = 80
 DEFAULT_SCHEME = 'http'
 BUFSIZ = 4096
-GET_PATTERN = 'GET {page} HTTP/1.1\nConnection: close\nHost: {host}\n\n'
+REQUEST_PATTERN = '{method} {page} HTTP/1.1\nConnection: close\nHost: {host}\n\n'
 HEADER_SEPARATOR = b'\r\n\r\n'
 REGEXP_ENCODING = r'charset=([\w.-]+)(?:;|\r\n|$)'
 DEFAULT_ENCODING = 'utf-8'
@@ -67,7 +67,7 @@ class HTTPClient(object):
     @classmethod
     def get(cls, url):
         if '//' not in url:
-            url = '{scheme}//{url}'.format(scheme=DEFAULT_SCHEME, url=url)
+            url = '{scheme}://{url}'.format(scheme=DEFAULT_SCHEME, url=url)
         url_parts = urlparse(url)
         PORT = protocol_port_mapping.get(url_parts.scheme, DEFAULT_PORT)
         HOST = url_parts.hostname
@@ -76,7 +76,10 @@ class HTTPClient(object):
         else:
             client = cls(HOST=HOST, PORT=PORT)
         client.conn()
-        GET_REQUEST = GET_PATTERN.format(page=url_parts.path, host=HOST)
+        path = url_parts.path
+        if not path:
+            path = '/'
+        GET_REQUEST = REQUEST_PATTERN.format(method='GET', page=path, host=HOST)
         client.send(GET_REQUEST)
         raw_response = client.recv()
         response = client._build_response(raw_response)
@@ -106,7 +109,7 @@ class HTTPClient(object):
 
 
 if __name__ == '__main__':
-    url = 'https://en.wikipedia.org/wiki/Battle_of_Dunkirk'
+    url = 'google.com.ua'
     r = HTTPClient.get(url)
     with open('Dunkirk'+'.html', 'w') as f:
         f.write(r.text)
