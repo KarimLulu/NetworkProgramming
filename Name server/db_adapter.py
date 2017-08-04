@@ -1,7 +1,9 @@
 import sqlite3
 import sys
+import os
 import pickle
-from sqlalchemy import Column, Integer, String, create_engine, exc, orm
+from sqlalchemy import Column, Integer, String, UniqueConstraint, create_engine, exc, orm, MetaData, inspect
+from sqlalchemy.schema import Sequence
 from sqlalchemy.ext.declarative import declarative_base
 from contextlib import contextmanager
 
@@ -42,14 +44,10 @@ class DatabaseAdapter(object):
             eng = create_engine(dsn)
         except Exception as err:
             raise
-
-        try:
-            eng.connect()
-        except:
-            raise
         self.Session = orm.sessionmaker(bind=eng)
         self.services = Service.__table__
-        self.eng = self.services.metadata.bind = eng
+        self.eng = self.metadata.bind = eng
+        self.metadata.create_all(checkfirst=True)
 
 
     @contextmanager
@@ -89,6 +87,10 @@ class DatabaseAdapter(object):
             else:
                 msg = 'Sorry, there is no service with the name `{name}`'.format(name=name)
             return msg
+
+
+    def __getattr__(self, attr):
+        return getattr(self.services, attr)
 
 
 if __name__=='__main__':
