@@ -72,6 +72,11 @@ class ChatServer(object):
                             nickname, msg = pickle.loads(data)
                             msg_to_broadcast = "\r<{0}> {1}".format(nickname, msg)
                             self.broadcast(client, msg_to_broadcast)
+                        else:
+                            msg = 'Client {0} is offline\n'.format(client.getpeername())
+                            self.broadcast(client, msg)
+                            if client in self.clients:
+                                self.clients.remove(client)
                     except BlockingIOError:
                         pass
 
