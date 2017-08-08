@@ -24,6 +24,7 @@ class ChatClient(object):
         #print(self.sock.getpeername(), self.sock.getsockname())
         print('<Me> ', flush = True, end = '')
         self.nickname = nickname
+        self.e = None
 
 
     def communicate(self):
@@ -35,6 +36,8 @@ class ChatClient(object):
         outcoming.start()
         try:
             while True:
+                if self.e:
+                    raise self.e
                 pass
         except KeyboardInterrupt:
             self.sock.close()
@@ -45,9 +48,8 @@ class ChatClient(object):
             try:
                 data = self.sock.recv(self.bufsize)
                 if not data:
-                    #print('Disconnected from the server...', file = sys.stderr)
-                    raise SystemExit
-                    #sys.exit(2)
+                    print('Disconnected from the server...', file = sys.stderr)
+                    self.e = SystemExit
                 else:
                     print(data.decode('utf-8'), end = '')
                     print('<Me> ', flush = True, end = '')
