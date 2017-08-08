@@ -57,7 +57,7 @@ class ChatServer(object):
                 print("Client {0} connected".format(addr))
                 msg = 'Client {0} entered our chatting room\n'.format(addr)
                 self.broadcast(client_sock, msg)
-            except:
+            except BlockingIOError:
                 pass
 
 
@@ -72,7 +72,7 @@ class ChatServer(object):
                             nickname, msg = pickle.loads(data)
                             msg_to_broadcast = "\r<{0}> {1}".format(nickname, msg)
                             self.broadcast(client, msg_to_broadcast)
-                    except Exception as error:
+                    except BlockingIOError:
                         pass
 
 

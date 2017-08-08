@@ -48,12 +48,12 @@ class ChatClient(object):
             try:
                 data = self.sock.recv(self.bufsize)
                 if not data:
-                    print('Disconnected from the server...', file = sys.stderr)
+                    print('Disconnected from the server...', file = sys.stderr, flush = True)
                     self.e = SystemExit
                 else:
                     print(data.decode('utf-8'), end = '')
                     print('<Me> ', flush = True, end = '')
-            except:
+            except BlockingIOError:
                 pass
 
 
@@ -64,7 +64,8 @@ class ChatClient(object):
                 msg = pickle.dumps(data)
                 self.sock.send(msg)
                 print('<Me> ', flush = True, end = '')
-            except:
+            except Exception as error:
+                print(error)
                 pass
 
 if __name__=='__main__':
