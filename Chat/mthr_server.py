@@ -5,6 +5,9 @@ import select
 import os
 from threading import Thread, Lock, current_thread
 
+from config import DB_PATH
+
+
 class MyThread(Thread):
 
     def __init__(self, name, func, *args, **kwargs):
@@ -55,7 +58,8 @@ class ChatServer(object):
                 client_sock.setblocking(False)
                 self.clients.append(client_sock)
                 print("Client {0} connected".format(addr))
-                msg = 'Client {0} entered our chatting room\n'.format(addr)
+                username = self.get_username(addr)
+                msg = 'Client `{0}` entered our chatting room\n'.format(username)
                 self.broadcast(client_sock, msg)
             except BlockingIOError:
                 pass
@@ -92,6 +96,13 @@ class ChatServer(object):
                     sock.close()
                     if sock in self.clients:
                         self.clients.remove(sock)
+
+
+    def get_username(self, addr):
+        with open(DB_PATH, 'rb+') as f:
+            db = pickle.load(f)
+        return db.get(addr)
+
 
 if __name__=='__main__':
     chat_server = ChatServer()

@@ -6,6 +6,7 @@ import os
 from threading import Thread, Lock, current_thread
 
 from mthr_server import MyThread
+from config import DB_PATH
 
 
 class ChatClient(object):
@@ -24,6 +25,7 @@ class ChatClient(object):
         #print(self.sock.getpeername(), self.sock.getsockname())
         print('<Me> ', flush = True, end = '')
         self.nickname = nickname
+        self.update_contacts()
         self.e = None
 
 
@@ -60,13 +62,24 @@ class ChatClient(object):
     def send_message(self):
         while True:
             try:
-                data = (self.nickname, sys.stdin.readline())
+                user_input = sys.stdin.readline()
+                data = (self.nickname, user_input)
                 msg = pickle.dumps(data)
                 self.sock.send(msg)
                 print('<Me> ', flush = True, end = '')
             except Exception as error:
                 print(error)
                 pass
+
+
+    def update_contacts(self):
+        with open(DB_PATH, 'rb+') as f:
+            db = pickle.load(f)
+            db[self.sock.getsockname()] = self.nickname
+            f.seek(0)
+            pickle.dump(db, f)
+            f.truncate()
+
 
 if __name__=='__main__':
     nickname = input('Your nickname> ')
