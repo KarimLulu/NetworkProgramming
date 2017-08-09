@@ -5,7 +5,7 @@ import select
 import os
 from threading import Thread, Lock, current_thread
 
-from config import DB_PATH
+#from config import DB_PATH
 
 
 class MyThread(Thread):
@@ -20,6 +20,17 @@ class MyThread(Thread):
 
     def run(self):
         self.rez = self.func(*self.args, **self.kwargs)
+
+
+class Connection(object):
+
+    def __init__(self, sock):
+        self.sock = sock
+        self.nickname = None
+
+
+    def __getattr__(self, attr):
+        return getattr(self.sock, attr)
 
 
 class ChatServer(object):
@@ -56,11 +67,10 @@ class ChatServer(object):
             try:
                 client_sock, addr = self.sock.accept()
                 client_sock.setblocking(False)
-                self.clients.append(client_sock)
+                conn = Connection(client_sock)
                 print("Client {0} connected".format(addr))
-                username = self.get_username(addr)
-                msg = 'Client `{0}` entered our chatting room\n'.format(username)
-                self.broadcast(client_sock, msg)
+                conn.nickname = addr
+                self.clients.append(conn)
             except BlockingIOError:
                 pass
 
@@ -73,11 +83,15 @@ class ChatServer(object):
                         data = client.recv(self.bufsize)
                         if data:
                             msg = pickle.loads(data)
-                            nickname = self.get_username(client.getpeername())
-                            msg_to_broadcast = "\r<{0}> {1}".format(nickname, msg)
+                            if r'\username' in msg:
+                                username = msg.split(r'\username', 1)[-1].strip()
+                                client.nickname = username
+                                msg_to_broadcast = 'Client `{0}` entered our chatting room\n'.format(client.nickname)
+                            else:
+                                msg_to_broadcast = "\r<{0}> {1}".format(client.nickname, msg)
                             self.broadcast(client, msg_to_broadcast)
                         else:
-                            msg = 'Client {0} is offline\n'.format(client.getpeername())
+                            msg = 'Client {0} is offline\n'.format(client.nickname)
                             self.broadcast(client, msg)
                             if client in self.clients:
                                 self.clients.remove(client)
@@ -85,17 +99,17 @@ class ChatServer(object):
                         pass
 
 
-    def broadcast(self, new_socket, msg = ''):
-        for sock in self.clients:
-            if sock != new_socket:
+    def broadcast(self, new_client, msg = ''):
+        for client in self.clients:
+            if client != new_client:
                 try:
                     # '\r' is needed to owerwrite the last line (for example in progress bars)
-                    sock.send(bytes(msg, 'utf-8'))
+                    client.send(bytes(msg, 'utf-8'))
                 except:
-                    print('Broken socket - ' + str(type(error).__name__ + ' : ' + ' '.join(error.args)), file = sys.stderr, flush = True)
-                    sock.close()
-                    if sock in self.clients:
-                        self.clients.remove(sock)
+                    #print('Broken socket - ' + str(type(error).__name__ + ' : ' + ' '.join(error.args)), file = sys.stderr, flush = True)
+                    client.close()
+                    if client in self.clients:
+                        self.clients.remove(client)
 
 
     def get_username(self, addr):
@@ -105,5 +119,6 @@ class ChatServer(object):
 
 
 if __name__=='__main__':
-    chat_server = ChatServer()
+    HOST = 'localhost'#'0.0.0.0'
+    chat_server = ChatServer(HOST=HOST)
     chat_server.serve()

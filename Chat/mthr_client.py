@@ -6,7 +6,7 @@ import os
 from threading import Thread, Lock, current_thread
 
 from mthr_server import MyThread
-from config import DB_PATH
+#from config import DB_PATH
 
 
 class ChatClient(object):
@@ -16,17 +16,23 @@ class ChatClient(object):
         self.sock = socket(AF_INET, SOCK_STREAM)
         self.addr = (HOST, PORT)
         self.bufsize = BUFSIZ
+        self.nickname = nickname
+        self.e = None
         try:
             self.sock.connect(self.addr)
         except:
             print('Unable to connect to {0}'.format(self.addr))
             sys.exit()
         print('Connected to remote host at {0}. Start sending messages'.format(self.addr), flush=True)
+
+        try:
+            self.sock.send(pickle.dumps(r'\username ' + self.nickname))
+        except Exception as error:
+            print(error)
+            pass
+
         #print(self.sock.getpeername(), self.sock.getsockname())
         print('<Me> ', flush = True, end = '')
-        self.nickname = nickname
-        self.update_contacts()
-        self.e = None
 
 
     def communicate(self):
@@ -71,16 +77,17 @@ class ChatClient(object):
                 pass
 
 
-    def update_contacts(self):
-        with open(DB_PATH, 'rb+') as f:
-            db = pickle.load(f)
-            db[self.sock.getsockname()] = self.nickname
-            f.seek(0)
-            pickle.dump(db, f)
-            f.truncate()
+    # def update_contacts(self):
+    #     with open(DB_PATH, 'rb+') as f:
+    #         db = pickle.load(f)
+    #         db[self.sock.getsockname()] = self.nickname
+    #         f.seek(0)
+    #         pickle.dump(db, f)
+    #         f.truncate()
 
 
 if __name__=='__main__':
     nickname = input('Your nickname> ')
-    chat_client = ChatClient(nickname = nickname)
+    HOST = 'localhost'#'52.57.8.237'
+    chat_client = ChatClient(HOST=HOST,nickname = nickname)
     chat_client.communicate()
