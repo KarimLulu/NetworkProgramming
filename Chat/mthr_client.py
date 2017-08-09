@@ -89,5 +89,5 @@ class ChatClient(object):
 if __name__=='__main__':
     nickname = input('Your nickname> ')
     HOST = 'localhost'#'52.57.8.237'
-    chat_client = ChatClient(HOST=HOST,nickname = nickname)
+    chat_client = ChatClient(HOST=HOST, nickname = nickname)
     chat_client.communicate()

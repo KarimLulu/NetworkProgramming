@@ -85,8 +85,12 @@ class ChatServer(object):
                             msg = pickle.loads(data)
                             if r'\username' in msg:
                                 username = msg.split(r'\username', 1)[-1].strip()
-                                client.nickname = username
-                                msg_to_broadcast = 'Client `{0}` entered our chatting room\n'.format(client.nickname)
+                                if client.nickname and not isinstance(client.nickname, tuple):
+                                    msg_to_broadcast = 'Client `{0}` renamed to `{1}`\n'.format(client.nickname, username)
+                                    client.nickname = username
+                                else:
+                                    client.nickname = username
+                                    msg_to_broadcast = 'Client `{0}` entered our chatting room\n'.format(client.nickname)
                             else:
                                 msg_to_broadcast = "\r<{0}> {1}".format(client.nickname, msg)
                             self.broadcast(client, msg_to_broadcast)
@@ -119,6 +123,6 @@ class ChatServer(object):
 
 
 if __name__=='__main__':
-    HOST = 'localhost'#'0.0.0.0'
+    HOST = '0.0.0.0'
     chat_server = ChatServer(HOST=HOST)
     chat_server.serve()
