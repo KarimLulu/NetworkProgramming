@@ -63,8 +63,7 @@ class ChatClient(object):
         while True:
             try:
                 user_input = sys.stdin.readline()
-                data = (self.nickname, user_input)
-                msg = pickle.dumps(data)
+                msg = pickle.dumps(user_input)
                 self.sock.send(msg)
                 print('<Me> ', flush = True, end = '')
             except Exception as error:

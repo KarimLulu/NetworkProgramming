@@ -72,8 +72,8 @@ class ChatServer(object):
                     try:
                         data = client.recv(self.bufsize)
                         if data:
-                            # data is a tuple of the form: (nickname, message_from_client)
-                            nickname, msg = pickle.loads(data)
+                            msg = pickle.loads(data)
+                            nickname = self.get_username(client.getpeername())
                             msg_to_broadcast = "\r<{0}> {1}".format(nickname, msg)
                             self.broadcast(client, msg_to_broadcast)
                         else:
