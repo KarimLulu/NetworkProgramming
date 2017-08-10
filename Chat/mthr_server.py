@@ -5,7 +5,7 @@ import select
 import os
 from threading import Thread, Lock, current_thread
 
-#from config import DB_PATH
+from config import COMMANDS
 
 
 class MyThread(Thread):
@@ -83,14 +83,8 @@ class ChatServer(object):
                         data = client.recv(self.bufsize)
                         if data:
                             msg = pickle.loads(data)
-                            if r'\username' in msg:
-                                username = msg.split(r'\username', 1)[-1].strip()
-                                if client.nickname and not isinstance(client.nickname, tuple):
-                                    msg_to_broadcast = 'Client `{0}` renamed to `{1}`\n'.format(client.nickname, username)
-                                    client.nickname = username
-                                else:
-                                    client.nickname = username
-                                    msg_to_broadcast = 'Client `{0}` entered our chatting room\n'.format(client.nickname)
+                            if any(msg.startswith(cmd) for cmd in COMMANDS):
+                                msg_to_broadcast = self._process_command(msg, client)
                             else:
                                 msg_to_broadcast = "\r<{0}> {1}".format(client.nickname, msg)
                             self.broadcast(client, msg_to_broadcast)
@@ -116,10 +110,16 @@ class ChatServer(object):
                         self.clients.remove(client)
 
 
-    def get_username(self, addr):
-        with open(DB_PATH, 'rb+') as f:
-            db = pickle.load(f)
-        return db.get(addr)
+    def _process_command(self, cmd, client):
+        if r'\username' in cmd:
+            username = cmd.split(r'\username', 1)[-1].strip()
+            if client.nickname and not isinstance(client.nickname, tuple):
+                msg = 'Client `{0}` renamed to `{1}`\n'.format(client.nickname, username)
+                client.nickname = username
+            else:
+                client.nickname = username
+                msg = 'Client `{0}` entered our chatting room\n'.format(client.nickname)
+            return msg
 
 
 if __name__=='__main__':
