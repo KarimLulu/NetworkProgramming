@@ -119,7 +119,7 @@ class ChatServer(object):
             else:
                 client.nickname = username
                 msg = 'Client `{0}` entered our chatting room\n'.format(client.nickname)
-            return msg
+            return '\r' + msg
 
 
 if __name__=='__main__':
