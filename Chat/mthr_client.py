@@ -8,10 +8,13 @@ from threading import Thread, Lock, current_thread
 from mthr_server import MyThread
 #from config import DB_PATH
 
+HOST = 'localhost'#'35.158.45.252'
+PORT = 2097
+BUFSIZ = 1024
 
 class ChatClient(object):
 
-    def __init__(self, HOST = 'localhost', PORT = 2097, BUFSIZ = 1024, nickname = 'Username'):
+    def __init__(self, nickname = 'Username'):
 
         self.sock = socket(AF_INET, SOCK_STREAM)
         self.addr = (HOST, PORT)
@@ -88,6 +91,5 @@ class ChatClient(object):
 
 if __name__=='__main__':
     nickname = input('Your nickname> ')
-    HOST = 'localhost'#'52.57.8.237'
-    chat_client = ChatClient(HOST=HOST, nickname = nickname)
+    chat_client = ChatClient(nickname = nickname)
     chat_client.communicate()

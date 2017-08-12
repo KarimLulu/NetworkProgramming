@@ -7,6 +7,9 @@ from threading import Thread, Lock, current_thread
 
 from config import COMMANDS
 
+HOST = '0.0.0.0'
+PORT = 2097
+BUFSIZ = 1024
 
 class MyThread(Thread):
 
@@ -35,7 +38,7 @@ class Connection(object):
 
 class ChatServer(object):
 
-    def __init__(self, HOST = 'localhost', PORT = 2097, BUFSIZ = 1024):
+    def __init__(self):
 
         self.sock = socket(AF_INET, SOCK_STREAM)
         self.addr = (HOST, PORT)
@@ -86,7 +89,7 @@ class ChatServer(object):
                             if any(msg.startswith(cmd) for cmd in COMMANDS):
                                 msg_to_broadcast = self._process_command(msg, client)
                             else:
-                                msg_to_broadcast = "\r<{0}> {1}".format(client.nickname, msg)
+                                msg_to_broadcast = "<{0}> {1}".format(client.nickname, msg)
                             self.broadcast(client, msg_to_broadcast)
                         else:
                             msg = 'Client {0} is offline\n'.format(client.nickname)
